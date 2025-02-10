@@ -16,7 +16,7 @@ try {
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     // Fetch user's name and password
-    $stmt = $pdo->prepare("SELECT username, passwords FROM users WHERE id = :user_id");
+    $stmt = $pdo->prepare("SELECT name, username, passwords FROM users WHERE id = :user_id");
     $stmt->bindParam(':user_id', $_SESSION['user_id'], PDO::PARAM_INT);
     $stmt->execute();
 
@@ -24,7 +24,7 @@ try {
 
     if ($user) {
         // Securely output the values
-        $username = htmlspecialchars($user['username']); // Username
+        $username = htmlspecialchars($user['name']); // Username
         $user_password = htmlspecialchars($user['passwords']); // User's password
     } else {
         $username = "Guest"; // Fallback if user not found
@@ -430,7 +430,8 @@ try {
                 <div class="dropdown">
                     <p class="user-name"><?php echo $username; ?></p>
                     <ul class="dropdown-menu">
-                        <li class="fa fa-sign-out-alt"><a href="logout.php" style = "text-decoration: none; font-weight: bold;"> Log out</a></li>
+                        <li class="fa fa-sign-out-alt"><a href="logout.php"
+                                style="text-decoration: none; font-weight: bold;"> Log out</a></li>
                     </ul>
                 </div>
             </div>
@@ -650,7 +651,8 @@ try {
                                     class="btn btn-sm btn-primary btn-edit btn-action" 
                                     data-emp-id="' . htmlspecialchars($item['id']) . '" 
                                     data-type="' . htmlspecialchars($item['type_of_license']) . '" 
-                                    data-key="' . htmlspecialchars($item['license_key']) . '" 
+                                    data-product-Id="' . htmlspecialchars($item['license_key']) . '" 
+                                    data-key="' . htmlspecialchars($item['lisence']) . '" 
                                     data-remarks="' . htmlspecialchars($item['remark']) . '" 
                                     data-computer="' . htmlspecialchars($item['computer_name']) . '" 
                                     data-account="' . htmlspecialchars($item['ms_account']) . '" 
@@ -706,7 +708,7 @@ try {
 
                         <div class="mb-3">
                             <label for="addage" class="form-label">Product ID | Activation Code | Request Code | License
-                                Key |</label>
+                                Key:</label>
                             <input type="text" class="form-control" id="addage" name="license_key"
                                 placeholder="Enter License Key" required>
                         </div>
@@ -748,6 +750,7 @@ try {
     </div>
 
 
+
     <!-- Edit Modal -->
     <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
         <div class="modal-dialog">
@@ -765,22 +768,30 @@ try {
 
                         <div class="mb-3">
                             <label for="editEmpNo" class="form-label">License Type:</label>
-                            <input type="text" class="form-control" id="edit_l_type" name="emp_no" required>
+                            <input type="text" class="form-control" id="edit_l_type" name="emp_no">
                         </div>
 
                         <div class="mb-3">
-                            <label for="editName" class="form-label">License Key:</label>
-                            <input type="text" class="form-control" id="edit_l_key" name="name" required>
+                            <label for="editName" class="form-label">License:</label>
+                            <input type="text" class="form-control" id="edit_l_key" name="name">
                         </div>
+
+                        <!-- Correct the second input's ID -->
+                        <div class="mb-3">
+                            <label for="editProductId" class="form-label">Product ID | Activation Code | Request Code |
+                                License Key:</label>
+                            <input type="text" class="form-control" id="edit_product_id" name="product_id">
+                        </div>
+
 
                         <div class="mb-3">
                             <label for="editAge" class="form-label">Computer Name:</label>
-                            <input type="text" class="form-control" id="edit_cm" name="age" required>
+                            <input type="text" class="form-control" id="edit_cm" name="age">
                         </div>
 
                         <div class="mb-3">
                             <label for="editBday" class="form-label">Remarks:</label>
-                            <input type="text" class="form-control" id="edit_remarks" name="bday" required>
+                            <input type="text" class="form-control" id="edit_remarks" name="bday">
                         </div>
 
                         <div class="mb-3">
@@ -805,8 +816,7 @@ try {
         </div>
     </div>
 
-
-
+    
     <!-- Bootstrap Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -844,19 +854,26 @@ try {
 
     <script>
         $(document).on('click', '.btn-edit', function () {
-            // Get data attributes from the clicked button
+            // Get data attributes
             const empId = $(this).data('emp-id');
             const type = $(this).data('type');
             const key = $(this).data('key');
+            const productId = $(this).data('product-id');
             const remarks = $(this).data('remarks');
             const computer = $(this).data('computer');
             const account = $(this).data('account');
             const password = $(this).data('password');
 
-            // Populate the modal fields
+            // Log values to verify
+            console.log({
+                empId, type, key, productId, remarks, computer, account, password
+            });
+
+            // Populate modal fields
             $('#editEmpId').val(empId);
             $('#edit_l_type').val(type);
             $('#edit_l_key').val(key);
+            $('#edit_product_id').val(productId);
             $('#edit_remarks').val(remarks);
             $('#edit_cm').val(computer);
             $('#edit_account').val(account);
@@ -865,61 +882,9 @@ try {
             // Show the modal
             $('#editModal').modal('show');
         });
+
     </script>
 
-
-
-    <script>
-
-        // Get today's date
-        const today = new Date();
-        const formattedDate = today.toISOString().split('T')[0]; // Format it as YYYY-MM-DD
-
-        // Set the value of the date input
-        document.getElementById('editBday').value = formattedDate;
-
-
-
-        $(document).ready(function () {
-            // Attach click event to Edit buttons
-            $('#employeeTable').on('click', '.btn-edit', function () {
-                const row = $(this).closest('tr'); // Get the row of the clicked button
-
-                // Extract data from the table row
-                const empId = $(this).data('emp-id'); // Employee ID (stored in the button as data-attribute)
-                const empNo = row.find('td:eq(0)').text(); // Employee No.
-                const name = row.find('td:eq(1)').text(); // Name
-                const age = row.find('td:eq(2)').text(); // Age (assumed to be in 3rd column)
-                const bday = row.find('td:eq(3)').text(); // Birthday (assumed to be in 4th column)
-                const gender = row.find('td:eq(4)').text(); // Gender (assumed to be in 5th column)
-                const division = row.find('td:eq(5)').text(); // Section/Dept. (assumed to be in 6th column)
-                const company = row.find('td:eq(6)').text(); // Company (assumed to be in 7th column)
-
-                // Populate modal fields
-                $('#editEmpId').val(empId);
-                $('#editEmpNo').val(empNo);
-                $('#editName').val(name);
-                $('#editAge').val(age);
-                $('#editBday').val(bday);
-
-                // Set gender
-                // Set gender radio button based on the value
-                if (gender.toLowerCase() === 'male') {
-                    $('#male').prop('checked', true);
-                } else if (gender.toLowerCase() === 'female') {
-                    $('#female').prop('checked', true);
-                } else {
-                    $('#other').prop('checked', true);
-                }
-
-                $('#editDivision').val(division);
-                $('#editCompany').val(company);
-
-                // Show the modal
-                $('#editModal').modal('show');
-            });
-        });
-    </script>
     <!--Set total entries each company-->
 
 </body>
